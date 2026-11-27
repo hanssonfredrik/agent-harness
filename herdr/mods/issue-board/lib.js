@@ -63,8 +63,19 @@ export function summaryOf(term, states) {
   const doing = st.key === "need" ? "Waiting for your answer."
     : st.spin ? s.activity ?? s.summary?.doing
     : s.summary?.doing;
-  if (!s.summary && !doing) return null;
-  return { did: s.summary?.did, doing, next: s.summary?.next };
+  if (!s.summary && !doing && !s.todos) return null;
+  return { did: s.summary?.did, doing, next: s.summary?.next, progress: progressOf(s) };
+}
+
+// How far the session's task is: the agent's to-do list when it keeps one, else its own estimate
+// from the summary line. { percent, label } or null.
+export function progressOf(s) {
+  if (s?.todos?.total) {
+    const { done, total } = s.todos;
+    return { percent: Math.round((done / total) * 100), label: `${done} of ${total} tasks done` };
+  }
+  const p = s?.summary?.progress;
+  return typeof p === "number" ? { percent: p, label: `About ${p}% done, the agent's estimate` } : null;
 }
 
 export const icon = (name, size, color) => svg(`mods/issue-board/${name}.svg`).size(size).flex_none().text_color(color);

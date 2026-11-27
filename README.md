@@ -95,10 +95,10 @@ Running it again after a `git pull` is safe.
 
 - **Board**: the In Progress, Next and Todo cards. Todo cards have **Move to Next**. Next cards have **Plan**, **Run** and **Move to Todo**. Tick several Next cards to start them together in one session.
 - **Plan / Run**: start Claude in its own worktree and tab, in plan mode or auto mode. `herdr/issue-agent/prompt.md` tells it when to move its cards.
-- **Agent**: what the selected agent did, is doing and proposes next, from the last line of its reply.
+- **Agent**: what the selected agent did, is doing and proposes next, from the last line of its reply, with a progress bar. The bar counts the agent's to-do list when it keeps one, and otherwise shows the agent's own estimate (`Progress: N%` at the end of that line), so treat it as a rough guide.
 - **Actions**: the repo's latest 10 workflow runs, with step progress for running ones.
 - **Sub-agents**: sub-agents running in any Claude session under the project folder.
-- **Usage**: how much of the week and of the Fable weekly limit is left, and when each resets. It reads what usage-bar last saved in `~\.claude\plugins\store\usage-bar_*.json`, so it needs no login of its own. It shows nothing until a Claude Code session with usage-bar has run a prompt.
+- **Usage**: how much of the week and of the Fable weekly limit is left, and when each resets. **Context** shows how much room the chat's agent has left before Claude Code compacts its conversation (or before the window is full, when auto-compaction is off). It reads what usage-bar last saved in `~\.claude\plugins\store\usage-bar_*.json`, so it needs no login of its own. It shows nothing until a Claude Code session with usage-bar has run a prompt.
 
 Drag the borders to resize panels; Herdr remembers sizes per computer in `layouts\.state\`.
 

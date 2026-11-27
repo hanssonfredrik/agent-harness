@@ -36,6 +36,14 @@ The bars show by themselves. `/usage-bar` turns them off and on; the choice is r
 - The session's rate-limit windows, model and effort, from Claude Code itself.
 - `https://api.anthropic.com/api/oauth/usage`, the endpoint `/usage` reads, for the Fable weekly limit. The request is made by Claude Code with your own login; the mod never sees the credential. It is asked at most every five minutes and backs off when rate limited.
 - `~/.claude.json`, only for the usage reading Claude Code last cached there, used when the endpoint refuses and the reading is under an hour old.
+- The session's context fill and where auto-compaction starts, from Claude Code itself. Reading the compaction point uses the local `summary` breakdown, which sends no request.
+
+## What it saves
+
+In its own store, `~/.claude/plugins/store/usage-bar_*.json`, for tools outside Claude Code such as the Herdr Usage panel:
+
+- `snapshot`: the latest model, effort, plan windows and Fable figure. A session without a plan reading yet keeps the last one saved.
+- `context:<terminal>`: one session's context tokens, window and compaction point, only when the session runs in a Herdr terminal (`HC_TERMINAL_ID`). It is removed when the session ends, and readings older than a day at the next start.
 
 Nothing is sent anywhere else and nothing is written outside the mod's own store.
 

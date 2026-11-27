@@ -1,5 +1,5 @@
 import { div } from "gpui-kit";
-import { v_flex } from "gpui-base";
+import { h_flex, v_flex } from "gpui-base";
 import { theme, terminals, focused, shared } from "herdr";
 import { followState, issuesOf, isOurs, statusOf, summaryOf, pill, header } from "./lib.js";
 
@@ -25,6 +25,10 @@ export const now = {
         .child(div().w_full().whitespace_normal().text_size(13).text_color(t.foreground).child(term.title || "Agent"))
         .child(note(mine ? "The summary appears after the agent's first reply." : "This agent wasn't started from the board, so it has no summary."))
       : v_flex().gap(12)
+        .when(Boolean(sum.progress), (el) => el.child(v_flex().gap(4).flex_none()
+          .child(div().text_size(11.5).text_color(t.muted).child(sum.progress.label))
+          .child(h_flex().w_full().h(6).rounded(3).bg(t.raised).overflow_hidden()
+            .child(div().h_full().w(`${Math.min(100, Math.max(0, sum.progress.percent))}%`).rounded(3).bg(t.accent)))))
         .child(line("Did", sum.did, t.muted))
         .child(line("Doing now", sum.doing, t.working))
         .child(line("Proposed next", sum.next, t.accent));

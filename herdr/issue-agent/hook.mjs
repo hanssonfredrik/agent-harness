@@ -15,13 +15,25 @@ export function activity(tool, input = {}) {
   return null;
 }
 
+// "Did: … | Doing: … | Next: … | Progress: 40%". Progress is the agent's own estimate of how much of
+// the session's task is done, and is optional.
 export function parseSummary(text) {
   const lines = String(text ?? '').split(/\r?\n/).reverse();
   for (const line of lines) {
-    const m = /Did:\s*(.*?)\s*\|\s*Doing:\s*(.*?)\s*\|\s*Next:\s*(.*)$/i.exec(line.replace(/[*`_]/g, ''));
-    if (m) return { did: m[1].trim(), doing: m[2].trim(), next: m[3].trim() };
+    const m = /Did:\s*(.*?)\s*\|\s*Doing:\s*(.*?)\s*\|\s*Next:\s*(.*?)(?:\s*\|\s*Progress:\s*(\d{1,3})\s*%?)?\s*$/i
+      .exec(line.replace(/[*`_]/g, ''));
+    if (!m) continue;
+    const summary = { did: m[1].trim(), doing: m[2].trim(), next: m[3].trim() };
+    if (m[4] !== undefined) summary.progress = Math.min(100, Number(m[4]));
+    return summary;
   }
   return null;
+}
+
+// Done and total of a TodoWrite list, or null for anything else.
+export function todosOf(tool, input = {}) {
+  if (tool !== 'TodoWrite' || !Array.isArray(input.todos) || !input.todos.length) return null;
+  return { done: input.todos.filter((t) => t?.status === 'completed').length, total: input.todos.length };
 }
 
 // A turn that ends in plain prose with a question: the last line before the summary line ends in "?".
@@ -39,7 +51,9 @@ export function next(prev, e) {
     case 'SessionEnd': return { ...s, phase: 'ended', need: null };
     case 'UserPromptSubmit': return { ...s, phase: 'working', need: null, activity: null };
     case 'PreToolUse':
-      return { ...s, phase: 'working', activity: activity(e.tool_name, e.tool_input) ?? s.activity, need: e.tool_name === 'ExitPlanMode' ? 'plan' : e.tool_name === 'AskUserQuestion' ? 'question' : null };
+      return { ...s, phase: 'working', activity: activity(e.tool_name, e.tool_input) ?? s.activity,
+        todos: todosOf(e.tool_name, e.tool_input) ?? s.todos,
+        need: e.tool_name === 'ExitPlanMode' ? 'plan' : e.tool_name === 'AskUserQuestion' ? 'question' : null };
     case 'PostToolUse':
       if (e.tool_name === 'ExitPlanMode') s.approved = true;
       return { ...s, phase: 'working', need: null };

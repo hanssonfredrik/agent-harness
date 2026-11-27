@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register, SessionRateLimit } from 'claude-code'
+import type { EngineInterface, Register, SessionContextUsage, SessionRateLimit } from 'claude-code'
 
 import type { ModelWeek, UsageWindow } from '../types'
 
@@ -28,6 +28,14 @@ const USAGE_HEADERS = { 'anthropic-beta': 'oauth-2025-04-20', 'content-type': 'a
  * Claude Code (the Herdr layout's Usage panel) can show it without a credential of their own.
  */
 const SNAPSHOT_KEY = 'snapshot'
+/**
+ * $.store key prefix for one session's context fill, followed by the Herdr terminal the session
+ * runs in (HC_TERMINAL_ID), so the Herdr Usage panel can show the agent in its chat. Sessions
+ * outside Herdr write none.
+ */
+const CONTEXT_PREFIX = 'context:'
+/** A context reading older than this is removed at the next session start. */
+const CONTEXT_MAX_AGE_MS = 24 * 60 * 60_000
 /** The endpoint is rate limited: read it no more often than this. */
 const FABLE_EVERY_MS = 5 * 60_000
 /** A cached reading older than this is not shown. */
@@ -38,6 +46,9 @@ const FABLE_ROW = 'seven_day'
 const LEVELS = /\b(low|medium|high|xhigh|max)\b/i
 
 let fableReadAt = 0
+/** Where auto-compaction starts for `compactModel`; null when it is off or unknown. */
+let compactAt: number | null = null
+let compactModel: string | undefined
 /** Set by a 429's retry-after: no request goes out before it, forced or not. */
 let fableRetryAt = 0
 
@@ -86,10 +97,69 @@ async function publish($: EngineInterface): Promise<void> {
     if (!reading.model && reading.windows.length === 0) return
     const previous = await $.store.get(SNAPSHOT_KEY)
     const { at: _at, ...before } = isRecord(previous) ? previous : {}
+    // The windows and Fable figure are the account's, not the session's: a session that has no
+    // reading of them yet (just started or reloaded) keeps the last one any session saved.
+    if (reading.windows.length === 0 && Array.isArray(before.windows)) reading.windows = before.windows
+    if (!reading.fable && isRecord(before.fable)) reading.fable = before.fable as ModelWeek
     if (JSON.stringify(before) === JSON.stringify(reading)) return
     await $.store.set(SNAPSHOT_KEY, { ...reading, at: await $.clock.now() })
   } catch {
     // Outside readers only.
+  }
+}
+
+/**
+ * The token count auto-compaction starts at. It depends on the model only, so it is read once per
+ * model, from the local `summary` breakdown, which sends no request.
+ */
+async function compactionThreshold($: EngineInterface): Promise<number | null> {
+  const current = await read($, model)
+  if (compactModel === current) return compactAt
+  try {
+    const breakdown = (await $.session.usage({ breakdown: 'summary' })).context.breakdown
+    compactAt = breakdown?.isAutoCompactEnabled ? (breakdown.autoCompactThreshold ?? null) : null
+  } catch {
+    compactAt = null
+  }
+  compactModel = current
+  return compactAt
+}
+
+/** The store key of this session's context reading, or null outside a Herdr terminal. */
+async function contextKey($: EngineInterface): Promise<string | null> {
+  const terminal = await $.env.get('HC_TERMINAL_ID')
+  return terminal ? `${CONTEXT_PREFIX}${terminal}` : null
+}
+
+/** Writes this session's context fill for the Herdr Usage panel. Never fails the caller. */
+async function publishContext($: EngineInterface, context: SessionContextUsage): Promise<void> {
+  try {
+    const key = await contextKey($)
+    if (!key) return
+    await $.store.set(key, {
+      tokens: context.tokens ?? null,
+      window: context.window,
+      compactAt: await compactionThreshold($),
+      model: await read($, model),
+      at: await $.clock.now(),
+    })
+  } catch {
+    // Outside readers only.
+  }
+}
+
+/** Removes context readings of sessions that ended long ago (a closed terminal leaves its own). */
+async function pruneContexts($: EngineInterface): Promise<void> {
+  try {
+    const now = await $.clock.now()
+    for (const key of await $.store.keys()) {
+      if (!key.startsWith(CONTEXT_PREFIX)) continue
+      const value = await $.store.get(key)
+      const at = isRecord(value) && typeof value.at === 'number' ? value.at : 0
+      if (now - at > CONTEXT_MAX_AGE_MS) await $.store.delete(key)
+    }
+  } catch {
+    // Housekeeping only.
   }
 }
 
@@ -266,7 +336,24 @@ export const register: Register = on => {
 
     const result = await next(e)
     await refresh($)
+    await pruneContexts($)
+    try {
+      await publishContext($, (await $.session.usage()).context)
+    } catch {
+      // No reading yet.
+    }
     return result
+  })
+
+  // An ended session's reading would show a stale fill for its terminal.
+  on('session.end', async ($, e, next) => {
+    try {
+      const key = await contextKey($)
+      if (key) await $.store.delete(key)
+    } catch {
+      // Housekeeping only.
+    }
+    return next(e)
   })
 
   // The effort the main loop's requests really ask for. Nothing is shown before the first one (or
@@ -319,6 +406,7 @@ export const register: Register = on => {
       await publish($)
     }
     await refreshModel($)
+    if (e.changed.includes('context')) await publishContext($, e.context)
 
     return result
   })
