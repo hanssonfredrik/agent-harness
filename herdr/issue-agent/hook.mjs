@@ -71,7 +71,7 @@ function main() {
   renameSync(tmp, file);
   if (e.hook_event_name === 'PostToolUse' && e.tool_name === 'ExitPlanMode') {
     process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PostToolUse',
-      additionalContext: 'The plan was approved. Before anything else, move the issue cards you were given to In Progress with: node .claude/skills/ship/project-status.mjs in-progress <issue> ...' } }));
+      additionalContext: 'The plan was approved. Before anything else, move the issue cards you were given to In Progress with: {{MOVE_COMMAND}} in-progress <issue> ...' } }));
   }
 }
 

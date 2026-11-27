@@ -19,7 +19,7 @@ export const actions = {
     v.error = null;
     v.progress = {};
     v.next = 0;
-    v.seen = shared("natsumi.refresh");
+    v.seen = shared("board.refresh");
     if (checking()) return;
     const load = async (cx) => {
       if (v.loading) return;
@@ -53,7 +53,7 @@ export const actions = {
     };
     cx.spawn((cx) => load(cx));
     cx.timer.every(2000, (cx) => {
-      const asked = shared("natsumi.refresh");
+      const asked = shared("board.refresh");
       const now = asked !== v.seen;
       v.seen = asked;
       if (now || Date.now() >= v.next) cx.spawn((cx) => load(cx));

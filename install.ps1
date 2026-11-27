@@ -1,57 +1,61 @@
 <#
 .SYNOPSIS
-  Installs the Herdr Natsumi layout and the Claude Code usage-bar mod from this repo onto this computer.
+  Installs the Herdr board layout and the Claude Code usage-bar mod from this repo onto this computer.
 
 .DESCRIPTION
-  Copies every file to where Herdr and Claude Code read it, fills in this computer's paths, and backs up
-  any file it replaces under ~/.agent-harness-backup/<time>/. Run state (layouts/.state, issue-agent/state,
-  the usage-bar store) is never touched. Safe to run again after a git pull.
+  Copies every file to where Herdr and Claude Code read it, fills in this computer's folders and the
+  project from harness.config.json, and backs up any file it replaces under
+  ~/.agent-harness-backup/<time>/. Run state (layouts/.state, issue-agent/state, the usage-bar store)
+  is never touched. Safe to run again after a git pull.
 
 .EXAMPLE
   powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
 
 .EXAMPLE
-  .\install.ps1 -RepoFolder D:/code/MessengerApp -WhatIf
+  .\install.ps1 -WhatIf
 #>
 [CmdletBinding(SupportsShouldProcess)]
 param(
-  # The project the board works on: where agents start and where Sub-agents looks.
-  [string]$RepoFolder = 'C:/Projects/Venueve/MessengerApp',
+  # Defaults to harness.config.json next to this script.
+  [string]$Config,
   [string]$HerdrAppHome,
   [string]$ClaudeHome
 )
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/scripts/files.ps1"
+# Windows PowerShell 5.1 has no $PSScriptRoot in parameter defaults, so the default is set here.
+if (-not $Config) { $Config = "$PSScriptRoot/harness.config.json" }
 
+$cfg = Read-HarnessConfig $Config
 if (-not $HerdrAppHome) { $HerdrAppHome = Get-DefaultHerdrAppHome }
 if (-not $ClaudeHome) { $ClaudeHome = Get-DefaultClaudeHome }
 $HerdrAppHome = ConvertTo-Slash $HerdrAppHome
 $ClaudeHome = ConvertTo-Slash $ClaudeHome
-$RepoFolder = ConvertTo-Slash $RepoFolder
 
-$swap = @{ '{{HERDR_APP_HOME}}' = $HerdrAppHome; '{{REPO_FOLDER}}' = $RepoFolder }
+$pairs = Get-HarnessPairs $cfg $HerdrAppHome
 $backup = Join-Path $HOME ('.agent-harness-backup/' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
 
 Write-Host "Herdr app folder:  $HerdrAppHome"
 Write-Host "Claude folder:     $ClaudeHome"
-Write-Host "Project folder:    $RepoFolder"
+Write-Host "Board:             $($cfg.title), project $($cfg.project) of $($cfg.owner), repo $($cfg.repo)"
+Write-Host "Project folder:    $($cfg.folder)"
 Write-Host ''
 
 $copied = 0; $backedUp = 0
-foreach ($part in Get-HarnessParts $HerdrAppHome $ClaudeHome) {
+foreach ($part in Get-HarnessParts $HerdrAppHome $ClaudeHome $cfg.layout) {
   $src = Join-Path $PSScriptRoot $part.Repo
   $files = @(Get-PartFiles $part $src)
   Write-Host ("{0,-28} {1} files -> {2}" -f $part.Name, $files.Count, $part.Live)
   foreach ($rel in $files) {
-    $to = Join-Path $part.Live $rel
+    $to = Join-Path $part.Live (Get-LiveName $part $rel)
     if (-not $PSCmdlet.ShouldProcess($to, 'Install')) { continue }
     if (Test-Path -LiteralPath $to) {
-      $keep = Join-Path $backup ($part.Repo + '/' + $rel)
+      $keep = Join-Path $backup ($part.Repo + '/' + (Get-LiveName $part $rel))
       New-Item -ItemType Directory -Force -Path (Split-Path -Parent $keep) | Out-Null
       Copy-Item -LiteralPath $to -Destination $keep -Force
       $backedUp++
     }
-    Copy-HarnessFile (Join-Path $src $rel) $to $swap
+    Copy-HarnessFile (Join-Path $src $rel) $to $pairs
     $copied++
   }
 }
@@ -72,9 +76,9 @@ $missing = @('herdr-app', 'hc', 'gh', 'node', 'claude') | Where-Object { -not (G
 if ($missing) {
   Write-Warning ("Not on the PATH: " + ($missing -join ', ') + '. See README.md, "What you need".')
 }
-if (-not (Test-Path -LiteralPath $RepoFolder)) {
-  Write-Warning "The project folder $RepoFolder does not exist. Clone the repo there or run again with -RepoFolder."
+if (-not (Test-Path -LiteralPath $cfg.folder)) {
+  Write-Warning "The project folder $($cfg.folder) does not exist. Clone the repo there or change ""folder"" in the config."
 }
 
 Write-Host ''
-Write-Host 'Next: restart Claude Code (it loads usage-bar on start), then press ctrl-shift-l in Herdr and pick natsumi.'
+Write-Host "Next: restart Claude Code (it loads usage-bar on start), then press ctrl-shift-l in Herdr and pick $($cfg.layout)."

@@ -49,15 +49,15 @@ function move(v, i, to, cx) {
 
 // Names the space and tabs the board made (hc can't), and shows a new agent once it reports.
 function tidy() {
-  const pending = shared("natsumi.focus");
+  const pending = shared("board.focus");
   if (pending && agents().some((a) => a.address === pending)) {
-    setShared("natsumi.focus", null);
+    setShared("board.focus", null);
     run("agent.focus", { terminal: pending });
   }
   const list = ours();
   const space = list.length ? spaces().find((s) => s.id === SPACE) : null;
   if (!space) return;
-  if (!space.named) run("space.rename", { id: space.id, name: "Natsumi" });
+  if (!space.named) run("space.rename", { id: space.id, name: props()?.title ?? "Board" });
   for (const tab of space.tabs) {
     const term = !tab.named && list.find((x) => x.labels["herdr.tab"] === tab.id);
     if (!term) continue;
@@ -77,7 +77,7 @@ function start(v, numbers, mode, cx) {
   const p = props();
   cx.spawn(async (cx) => {
     try {
-      setShared("natsumi.focus", await launch(p, numbers, mode));
+      setShared("board.focus", await launch(p, numbers, mode));
       numbers.forEach((n) => v.picked.delete(n));
     } catch (e) {
       notify({ title: "Couldn't start the agent", body: String(e?.message ?? e).slice(0, 200), level: "error" });
@@ -95,7 +95,7 @@ export const board = {
     v.picked = new Set();
     v.starting = new Set();
     v.moving = new Set();
-    v.seen = shared("natsumi.refresh");
+    v.seen = shared("board.refresh");
     followState(v, cx);
     if (checking()) return;
     const load = async (cx) => {
@@ -113,18 +113,18 @@ export const board = {
         const next = new Set(v.items.filter((i) => i.status === "Next").map((i) => i.number));
         v.picked = new Set([...v.picked].filter((n) => next.has(n)));
         const titles = Object.fromEntries(v.items.map((i) => [i.number, i.title]));
-        if (JSON.stringify(shared("natsumi.titles")) !== JSON.stringify(titles)) setShared("natsumi.titles", titles);
+        if (JSON.stringify(shared("board.titles")) !== JSON.stringify(titles)) setShared("board.titles", titles);
       } catch (e) {
         v.error = ghError(e);
       }
       v.loading = false;
-      setShared("natsumi.updated", { at: Date.now(), ok: !v.error });
+      setShared("board.updated", { at: Date.now(), ok: !v.error });
       cx.notify();
     };
     cx.spawn((cx) => load(cx));
     cx.timer.every(30000, (cx) => { cx.spawn((cx) => load(cx)); });
     cx.timer.every(1000, (cx) => {
-      const asked = shared("natsumi.refresh");
+      const asked = shared("board.refresh");
       if (asked !== v.seen) { v.seen = asked; cx.spawn((cx) => load(cx)); }
       tidy();
     });

@@ -13,7 +13,7 @@ export const now = {
     const mine = Boolean(term) && isOurs(term);
     const issues = term ? issuesOf(term) : [];
     const sum = mine ? summaryOf(term, v.states) : null;
-    const title = issues.length === 1 ? (shared("natsumi.titles") ?? {})[issues[0]] : null;
+    const title = issues.length === 1 ? (shared("board.titles") ?? {})[issues[0]] : null;
 
     const line = (label, text, color) => v_flex().gap(2).flex_none()
       .child(div().text_size(11).font_semibold().text_color(color).child(label))

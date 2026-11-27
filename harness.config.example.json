@@ -1,0 +1,9 @@
+{
+  "layout": "board",
+  "title": "My project",
+  "owner": "your-github-name",
+  "project": 1,
+  "repo": "your-github-name/your-repo",
+  "folder": "C:/code/your-repo",
+  "moveCommand": "node C:/Users/you/.config/herdr-app/issue-agent/project-status.mjs your-github-name 1"
+}

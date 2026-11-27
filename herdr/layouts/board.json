@@ -4,11 +4,11 @@
   "titlebar": "none",
   "background": "canvas",
   "terminal_padding": [14, 14],
-  "preview": "layouts/natsumi.svg",
+  "preview": "layouts/{{LAYOUT}}.svg",
   "children": [
     {
       "id": "bar", "type": "block", "size": { "px": 46 }, "window_drag": true,
-      "content": { "mod": "issue-board", "props": { "view": "bar", "title": "Natsumi", "repo": "hanssonfredrik/messengerapp", "folder": "{{REPO_FOLDER}}" } }
+      "content": { "mod": "issue-board", "props": { "view": "bar", "title": "{{TITLE}}", "repo": "{{REPO}}", "folder": "{{REPO_FOLDER}}" } }
     },
     {
       "id": "body", "type": "row", "padding": 8, "gap": 8,
@@ -19,7 +19,7 @@
             {
               "id": "board", "type": "block", "size": { "weight": 1 }, "min": 140, "radius": 12,
               "border": { "width": 1, "color": "border" },
-              "content": { "mod": "issue-board", "props": { "view": "board", "owner": "hanssonfredrik", "project": 3, "repo": "hanssonfredrik/messengerapp", "folder": "{{REPO_FOLDER}}" } }
+              "content": { "mod": "issue-board", "props": { "view": "board", "title": "{{TITLE}}", "owner": "{{OWNER}}", "project": "{{PROJECT}}", "repo": "{{REPO}}", "folder": "{{REPO_FOLDER}}" } }
             },
             {
               "id": "subagents", "type": "block", "size": { "px": 196 }, "min": 90, "radius": 12,
@@ -44,7 +44,7 @@
             {
               "id": "actions", "type": "block", "size": { "weight": 1 }, "min": 140, "radius": 12,
               "border": { "width": 1, "color": "border" },
-              "content": { "mod": "issue-board", "props": { "view": "actions", "repo": "hanssonfredrik/messengerapp" } }
+              "content": { "mod": "issue-board", "props": { "view": "actions", "repo": "{{REPO}}" } }
             },
             {
               "id": "usage", "type": "block", "size": { "px": 196 }, "min": 120, "radius": 12,

@@ -3,6 +3,8 @@ import { h_flex } from "gpui-base";
 import { terminals, appHome, theme, readTextFile, watchFolder, checking } from "herdr";
 import * as fs from "fs/promises";
 
+// The Herdr space board agents run in. Its id is a label on every agent's terminal, so changing
+// it disconnects agents that are already running from the board.
 export const SPACE = "spnatsumiboard";
 export const agentDir = () => `${appHome().replace(/\\/g, "/")}/issue-agent`;
 

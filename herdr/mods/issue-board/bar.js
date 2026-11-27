@@ -12,7 +12,7 @@ function newChat(v, cx) {
   const p = props();
   cx.spawn(async (cx) => {
     try {
-      setShared("natsumi.focus", await launch(p, [], null));
+      setShared("board.focus", await launch(p, [], null));
     } catch (e) {
       notify({ title: "Couldn't start the chat", body: String(e?.message ?? e).slice(0, 200), level: "error" });
     }
@@ -31,7 +31,7 @@ export const bar = {
     const t = theme();
     const w = win() ?? {};
     const shown = focused()?.agent;
-    const up = shared("natsumi.updated");
+    const up = shared("board.updated");
     const terms = new Map(terminals().map((x) => [x.address, x]));
 
     const chip = (a) => {
@@ -60,7 +60,7 @@ export const bar = {
       .child(h_flex().id("chips").flex_1().min_w(0).gap(4).items_center().overflow_x_scrollbar().children(agents().map(chip)))
       .child(button("new-chat", labelled("plus", "New chat", t.muted), (_e, cx) => newChat(v, cx)))
       .child(button("refresh", labelled("refresh", up ? (up.ok ? `${ago(Date.now() - up.at)} ago` : "Failed") : "Refresh", up && !up.ok ? t.blocked : t.muted),
-        () => setShared("natsumi.refresh", Date.now())))
+        () => setShared("board.refresh", Date.now())))
       .child(button("to-main", "Main layout", () => run("layout.switch", { name: "main" })))
       .when(Boolean(w.buttons), (el) => el
         .child(button("w-min", icon("win-min", 16, t.muted), () => run("window.minimize")))

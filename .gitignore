@@ -1,3 +1,5 @@
+# Your own project and paths (copy harness.config.example.json).
+harness.config.json
 # Per-computer run state, never part of the harness.
 herdr/issue-agent/state/
 herdr/layouts/.state/
