@@ -1,0 +1,6 @@
+# Per-computer run state, never part of the harness.
+herdr/issue-agent/state/
+herdr/layouts/.state/
+# Typings the apps write themselves (see scripts/files.ps1).
+herdr/mods/issue-board/gpui-kit.d.ts
+claude-code/usage-bar/.claude-plugin/types/

@@ -1,0 +1,59 @@
+{
+  "id": "root",
+  "type": "column",
+  "titlebar": "none",
+  "background": "canvas",
+  "terminal_padding": [14, 14],
+  "preview": "layouts/natsumi.svg",
+  "children": [
+    {
+      "id": "bar", "type": "block", "size": { "px": 46 }, "window_drag": true,
+      "content": { "mod": "issue-board", "props": { "view": "bar", "title": "Natsumi", "repo": "hanssonfredrik/messengerapp", "folder": "{{REPO_FOLDER}}" } }
+    },
+    {
+      "id": "body", "type": "row", "padding": 8, "gap": 8,
+      "children": [
+        {
+          "id": "left", "type": "column", "size": { "px": 340 }, "min": 260, "max": 520, "gap": 8,
+          "children": [
+            {
+              "id": "board", "type": "block", "size": { "weight": 1 }, "min": 140, "radius": 12,
+              "border": { "width": 1, "color": "border" },
+              "content": { "mod": "issue-board", "props": { "view": "board", "owner": "hanssonfredrik", "project": 3, "repo": "hanssonfredrik/messengerapp", "folder": "{{REPO_FOLDER}}" } }
+            },
+            {
+              "id": "subagents", "type": "block", "size": { "px": 196 }, "min": 90, "radius": 12,
+              "border": { "width": 1, "color": "border" },
+              "content": { "mod": "issue-board", "props": { "view": "subagents", "folder": "{{REPO_FOLDER}}" } }
+            }
+          ]
+        },
+        {
+          "id": "chat", "type": "block", "min": 400, "radius": 12, "background": "background",
+          "border": { "width": 1, "color": "border" },
+          "content": { "agent": "focused" }
+        },
+        {
+          "id": "side", "type": "column", "size": { "px": 340 }, "min": 260, "max": 520, "gap": 8,
+          "children": [
+            {
+              "id": "now", "type": "block", "size": { "px": 290 }, "min": 140, "radius": 12,
+              "border": { "width": 1, "color": "border" },
+              "content": { "mod": "issue-board", "props": { "view": "now" } }
+            },
+            {
+              "id": "actions", "type": "block", "size": { "weight": 1 }, "min": 140, "radius": 12,
+              "border": { "width": 1, "color": "border" },
+              "content": { "mod": "issue-board", "props": { "view": "actions", "repo": "hanssonfredrik/messengerapp" } }
+            },
+            {
+              "id": "usage", "type": "block", "size": { "px": 196 }, "min": 120, "radius": 12,
+              "border": { "width": 1, "color": "border" },
+              "content": { "mod": "issue-board", "props": { "view": "usage" } }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

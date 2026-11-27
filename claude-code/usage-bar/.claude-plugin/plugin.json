@@ -1,0 +1,6 @@
+{
+  "name": "usage-bar",
+  "version": "0.1.0",
+  "description": "Model, effort level and plan usage bars above the prompt (session, week with Fable in parentheses), like /usage. Toggle with /usage-bar.",
+  "types": "./types/index.d.ts"
+}
